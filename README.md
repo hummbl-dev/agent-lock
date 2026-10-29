@@ -17,13 +17,15 @@ python -m agent_lock verify agent-lock.json
 python -m agent_lock hash config.json
 ```
 
-Or `pip install .` to get the `agent-lock` console script.
+Or `pip install .` to get the `agent-lock` console script. The `lock` API pins
+tool `schema_sha256` values and records model pins; `pins.pin_issues` reports
+what is still unresolved.
 
 ## Status
 
-v0.1 — canonicalization, hashing, produce, verify. Real *resolution* (pinning
-model weights/snapshots and resolving tool schema hashes from registries) is
-out of scope for now and the current adoption gap to close next.
+v0.1 — canonicalization, hashing, produce, verify, `lock` (tool schema pinning),
+and model-pin validation. Real *resolution* (resolving model alias/floating
+pins and tool schemas from registries) is the next gap to close.
 
 ## License
 
