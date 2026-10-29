@@ -40,6 +40,23 @@ def cmd_hash(args) -> int:
     return 0
 
 
+def cmd_drift(args) -> int:
+    from .drift import drift
+    lock = _load(args.lockfile)
+    live = _load(args.config)
+    resolver = None
+    if args.registry:
+        from .registry import UrlRegistry
+        resolver = UrlRegistry.load(args.registry)
+    findings = drift(lock, live, resolver)
+    if not findings:
+        print("NO DRIFT")
+        return 0
+    for f in findings:
+        print(f"DRIFT: {f}")
+    return 1
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="agent-lock", description=__doc__)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -58,6 +75,12 @@ def main(argv: list[str] | None = None) -> int:
     h = sub.add_parser("hash", help="print config_sha256 for a config")
     h.add_argument("config")
     h.set_defaults(fn=cmd_hash)
+
+    d = sub.add_parser("drift", help="report drift between a lockfile and a live config")
+    d.add_argument("lockfile")
+    d.add_argument("config")
+    d.add_argument("--registry", help="URL/path to a registry for resolving tool schemas")
+    d.set_defaults(fn=cmd_drift)
 
     args = ap.parse_args(argv)
     return args.fn(args)

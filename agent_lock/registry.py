@@ -55,3 +55,40 @@ class FileRegistry:
         if entry is None or not isinstance(entry, dict) or "schema" not in entry:
             raise LookupError(f"tool {name!r} schema not in registry")
         return entry["schema"]
+
+
+class UrlRegistry(FileRegistry):
+    """Registry loaded from a URL (http/https/file) via stdlib urllib."""
+
+    @classmethod
+    def load(cls, url: str) -> "UrlRegistry":
+        import urllib.request
+
+        with urllib.request.urlopen(url) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        return cls(data)
+
+
+class CompositeResolver:
+    """Try multiple resolvers in order; the first hit wins."""
+
+    def __init__(self, resolvers: list[Any]):
+        self._resolvers = resolvers
+
+    def resolve_model(self, name: str, provider: str | None = None, pin: str | None = None) -> dict[str, Any]:
+        last: LookupError | None = None
+        for resolver in self._resolvers:
+            try:
+                return resolver.resolve_model(name, provider, pin)
+            except LookupError as exc:
+                last = exc
+        raise last or LookupError(f"model {name!r} not found in any resolver")
+
+    def resolve_tool_schema(self, name: str, version: str | None = None) -> dict[str, Any]:
+        last: LookupError | None = None
+        for resolver in self._resolvers:
+            try:
+                return resolver.resolve_tool_schema(name, version)
+            except LookupError as exc:
+                last = exc
+        raise last or LookupError(f"tool {name!r} schema not found in any resolver")

@@ -19,15 +19,17 @@ python -m agent_lock hash config.json
 
 Or `pip install .` to get the `agent-lock` console script. The `lock` API pins
 tool `schema_sha256` values and records model pins; `resolve` drives a pluggable
-`Resolver` (see `FileRegistry`) to resolve model alias/floating pins and fetch
-tool schemas before locking. `pins.pin_issues` / `pins.tool_issues` report what
-remains unresolved.
+`Resolver` (see `FileRegistry`, `UrlRegistry`, `CompositeResolver`) to resolve
+model alias/floating pins and fetch tool schemas before locking. `drift`
+detects when a live config has moved off its lockfile, and
+`pins.pin_issues` / `pins.tool_issues` report what remains unresolved.
 
 ## Status
 
 v0.1 — canonicalization, hashing, produce, verify, `lock` (tool schema
-pinning), model-pin validation, and registry-backed `resolve`. Remaining: real
-registry *sources* (live model/tool registries) beyond the local `FileRegistry`.
+pinning), model-pin validation, registry-backed `resolve` (`FileRegistry`,
+`UrlRegistry`, `CompositeResolver`), and `drift` detection. Remaining: real
+registry *sources* (live hosted model/tool registries) beyond URL/file JSON.
 
 ## License
 
