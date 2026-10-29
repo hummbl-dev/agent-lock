@@ -39,6 +39,41 @@ def verify(doc: dict[str, Any]) -> bool:
     return bool(claimed) and claimed == config_sha256(doc)
 
 
+def schema_sha256(schema: dict[str, Any]) -> str:
+    """SHA-256 of a tool's JSON schema (JCS canonicalization)."""
+    return hashlib.sha256(
+        json.dumps(schema, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+    ).hexdigest()
+
+
+def lock(
+    config: dict[str, Any],
+    *,
+    generated_by: str,
+    environment: str | None = None,
+    generated_at: str | None = None,
+    extra_provenance: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Produce a lockfile with tool schema pins.
+
+    For every tool carrying a `schema`, sets `schema_sha256` to the canonical
+    hash of that schema (overriding any stale value). Tools without a schema
+    are left as-is — they need registry resolution, which is out of scope.
+    Model pins are recorded, not resolved (see `pins.pin_issues`).
+    """
+    doc = copy.deepcopy(config)
+    for tool in doc.get("tools", []):
+        if isinstance(tool, dict) and "schema" in tool:
+            tool["schema_sha256"] = schema_sha256(tool["schema"])
+    return produce(
+        doc,
+        generated_by=generated_by,
+        environment=environment,
+        generated_at=generated_at,
+        extra_provenance=extra_provenance,
+    )
+
+
 def produce(
     config: dict[str, Any],
     *,
