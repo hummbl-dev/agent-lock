@@ -1,5 +1,6 @@
 from .core import canonicalize, config_sha256, lock, produce, resolve, schema_sha256, verify
 from .drift import drift
+from .live import OllamaResolver, OpenRouterResolver
 from .pins import PIN_LEVELS, is_resolved, pin_issues, tool_issues, valid_pin
 from .registry import CompositeResolver, FileRegistry, Resolver, UrlRegistry
 
@@ -19,6 +20,8 @@ __all__ = [
     "valid_pin",
     "CompositeResolver",
     "FileRegistry",
+    "OllamaResolver",
+    "OpenRouterResolver",
     "Resolver",
     "UrlRegistry",
 ]
