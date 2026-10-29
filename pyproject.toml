@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-lock"
+version = "0.1.0"
+description = "Producer for hash-addressed agent configuration lockfiles (companion to acve)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = []
+
+[project.scripts]
+agent-lock = "agent_lock.cli:main"
+
+[tool.setuptools]
+packages = ["agent_lock"]
