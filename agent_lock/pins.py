@@ -39,3 +39,15 @@ def pin_issues(config: dict[str, Any]) -> list[str]:
     elif not is_resolved(pin):
         issues.append(f"model.pin {pin!r} is unresolved (alias/floating); requires registry resolution")
     return issues
+
+
+def tool_issues(config: dict[str, Any]) -> list[str]:
+    """Report tools that lack a schema ([] = fully pinned)."""
+    issues: list[str] = []
+    for i, tool in enumerate(config.get("tools", [])):
+        if not isinstance(tool, dict):
+            issues.append(f"tool {i}: not an object")
+            continue
+        if "schema" not in tool:
+            issues.append(f"tool {i} ({tool.get('name', '?')}): missing schema; needs registry resolution")
+    return issues
