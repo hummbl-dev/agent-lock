@@ -100,3 +100,39 @@ def produce(
         provenance.update(extra_provenance)
     doc["provenance"] = provenance
     return doc
+
+
+def resolve(
+    config: dict[str, Any],
+    resolver: Any,
+    *,
+    generated_by: str,
+    environment: str | None = None,
+    generated_at: str | None = None,
+    extra_provenance: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Resolve model pins and tool schemas via a resolver, then lock.
+
+    The model is resolved strictly: `LookupError` propagates if the resolver
+    cannot satisfy it (a lockfile must never silently keep a floating pin).
+    Tool schemas are resolved best-effort: a tool the resolver cannot satisfy
+    is left schema-less and flagged by `pins.tool_issues`.
+    """
+    doc = copy.deepcopy(config)
+    model = doc.get("model")
+    if isinstance(model, dict):
+        resolved_model = resolver.resolve_model(model.get("name", ""), model.get("provider"), model.get("pin"))
+        model.update(resolved_model)
+    for tool in doc.get("tools", []):
+        if isinstance(tool, dict) and "schema" not in tool:
+            try:
+                tool["schema"] = resolver.resolve_tool_schema(tool.get("name", ""), tool.get("version"))
+            except LookupError:
+                pass
+    return lock(
+        doc,
+        generated_by=generated_by,
+        environment=environment,
+        generated_at=generated_at,
+        extra_provenance=extra_provenance,
+    )
