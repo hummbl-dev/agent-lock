@@ -28,8 +28,8 @@ detects when a live config has moved off its lockfile, and
 
 v0.1 — canonicalization, hashing, produce, verify, `lock` (tool schema
 pinning), model-pin validation, registry-backed `resolve` (`FileRegistry`,
-`UrlRegistry`, `CompositeResolver`), and `drift` detection. Remaining: real
-registry *sources* (live hosted model/tool registries) beyond URL/file JSON.
+`UrlRegistry`, `CompositeResolver`), live hosted sources (`OllamaResolver`,
+`OpenRouterResolver`), and `drift` detection.
 
 ## License
 
