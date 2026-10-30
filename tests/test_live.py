@@ -2,7 +2,7 @@ import json
 import unittest
 from unittest.mock import patch
 
-from agent_lock import OllamaResolver, OpenRouterResolver, resolve, verify
+from agent_lock import CompositeResolver, OllamaResolver, OpenRouterResolver, resolve, verify
 from agent_lock.live import _DEFAULT_URL_TIMEOUT_SECONDS, _default_urlopen
 
 OLLAMA_RESPONSE = {
@@ -71,6 +71,19 @@ class TestOllamaResolver(unittest.TestCase):
         with self.assertRaises(LookupError):
             r.resolve_model("qwen3:8b")
 
+    def test_non_string_digest_raises(self):
+        for digest in (123, {}):
+            data = {"models": [{"name": "qwen3:8b", "digest": digest}]}
+            r = OllamaResolver(urlopen=_fake_urlopen(data))
+            with self.assertRaises(LookupError):
+                r.resolve_model("qwen3:8b")
+
+    def test_non_string_pin_raises_lookup_error(self):
+        r = OllamaResolver(urlopen=_fake_urlopen(OLLAMA_RESPONSE))
+        for pin in (["snapshot"], {"pin": "snapshot"}):
+            with self.assertRaises(LookupError):
+                r.resolve_model("qwen3:8b", pin=pin)
+
     def test_requested_digest_matches(self):
         r = OllamaResolver(urlopen=_fake_urlopen(OLLAMA_RESPONSE))
         resolved = r.resolve_model("qwen3:8b", pin="sha256:abcdef")
@@ -123,6 +136,11 @@ class TestOpenRouterResolver(unittest.TestCase):
             r.resolve_model("openai/gpt-5.5", pin="sha256:not-an-id")
 
 
+class _StaticHit:
+    def resolve_model(self, name, provider=None, pin=None):
+        return {"name": name, "provider": "static", "pin": "weights", "identity": "sha256:static"}
+
+
 class TestResolveWithLiveSource(unittest.TestCase):
     def test_resolve_ollama_model(self):
         config = {
@@ -133,6 +151,16 @@ class TestResolveWithLiveSource(unittest.TestCase):
         doc = resolve(config, OllamaResolver(urlopen=_fake_urlopen(OLLAMA_RESPONSE)), generated_by="test")
         self.assertEqual(doc["model"]["pin"], "snapshot")
         self.assertTrue(verify(doc))
+
+    def test_composite_continues_after_unhashable_pin(self):
+        comp = CompositeResolver(
+            [
+                OllamaResolver(urlopen=_fake_urlopen(OLLAMA_RESPONSE)),
+                _StaticHit(),
+            ]
+        )
+        resolved = comp.resolve_model("qwen3:8b", pin=["snapshot"])
+        self.assertEqual(resolved["identity"], "sha256:static")
 
 
 class TestDefaultUrlOpen(unittest.TestCase):

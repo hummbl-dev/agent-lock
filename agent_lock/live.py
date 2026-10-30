@@ -34,14 +34,23 @@ def _require_identity(value: Any, *, model: str, source: str) -> str:
 
 
 def _check_requested_pin(
-    requested: str | None,
+    requested: Any,
     *,
     produced: str,
     identity: str,
     unresolved: frozenset[str],
 ) -> None:
-    """Accept an omitted pin, an unresolved pin, the produced level, or the identity."""
-    if requested is None or requested in unresolved or requested == produced or requested == identity:
+    """Accept an omitted pin, an unresolved pin, the produced level, or the identity.
+
+    A non-string pin is a config error, not a catalog miss. Raise LookupError
+    so CompositeResolver can try the next source instead of aborting on TypeError
+    when an unhashable value is tested for set membership.
+    """
+    if requested is None:
+        return
+    if isinstance(requested, str) and (
+        requested in unresolved or requested in (produced, identity)
+    ):
         return
     raise LookupError(
         f"requested pin {requested!r} does not match {produced} identity {identity!r}"
